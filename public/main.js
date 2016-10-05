@@ -81,3 +81,29 @@ const winner = b => {
     return null
   }
 }
+
+drawBoard(boardState)
+
+board.addEventListener('click', ({target}) => {
+  const col = target.cellIndex
+  const row = target.closest('tr').rowIndex
+
+  if(boardState[row][col]) {
+    return console.log('Cannot move there!')
+  }
+
+  if(winner(boardState)) {
+    return console.log('Game is over!')
+  }
+
+  boardState[row][col] = nextPlayer
+  drawBoard(boardState)
+  console.log('Current game state:', board)
+
+  if(winner(boardState)) {
+    return status.innerText = `${nextPlayer} WON!`
+  }
+
+  nextPlayer = nextPlayer === 'X' ? 'O' : 'X'
+  status.innerText = `${nextPlayer}s Turn`
+ })
