@@ -16,7 +16,19 @@ app.set('view engine', 'pug')
 
 app.use(express.static('public'))
 
-app.get('/', (req,res) => res.render('index'))
+app.get('/', (req,res) => res.render('home'))
+app.get('/game', (req,res) => {
+  Game.find().then(games => res.render('index', {games}))
+})
+app.get('/game/create', (req,res) => {
+  Game.create({
+    board: [['','',''],['','',''],['','','']],
+    toMove: '💩',
+  })
+  .then(game => res.redirect(`/game/${game._id}`))
+  .catch(console.error)
+})
+app.get('/game/:id', (req,res) => res.render('game'))
 
 mongoose.Promise = Promise
 mongoose.connect(MONGODB_URL, () => {
@@ -46,33 +58,45 @@ io.on('connect', socket => {
     socket.emit('error', err)
     console.error(err)
   })
-
-  socket.on('make move', ({row, col}) => {
-    // if game is over, stop function
-    if(socket.game.result) {
-      return
-    }
-    // if something already exists in clicked square, stop running function
-    if(socket.game.board[row][col]) {
-      return
-    }
-    // game logic
-    socket.game.board[row][col] = socket.game.toMove
-    socket.game.toMove = socket.game.toMove === '💩' ? '🐳' : '💩'
-    socket.game.markModified('board') //trigger mongoose change detection
-
-    const result = winner(socket.game.board)
-    if(result) {
-      socket.game.toMove = undefined
-      socket.game.result = result
-    }
-
-    socket.game.save().then(g => socket.emit('move made', g))
-  })
   console.log(`Socket conneceted: ${socket.id}`)
+
+  socket.on('make move', move => makeMove(move, socket))
   socket.on('disconnect', () => console.log(`Socket disconnected: ${socket.id}`))
 })
 
+const makeMove = (move, socket) => {
+  if(isFinished(socket.game) || isSpaceAvailable(socket.game, move)) {
+    return
+  }
+  // set move
+  // toggle move
+  // setResult
+  setMove(socket.game, move)
+    .then(toggleNextMove)
+    .then(setResult)
+    .then(g => g.save())
+    .then(g => socket.emit('move made', g))
+}
+
+const isFinished = game => !!game.result
+const isSpaceAvailable = (game, move) => !game.board[move.row][move.col]
+const setMove = (game, move) => {
+  game.board[move.row][move.col] = game.toMove
+  game.markModified('board') //trigger mongoose change detection
+  return Promise.resolve(game)
+}
+const toggleNextMove = game => {
+  game.toMove = game.toMove === '💩' ? '🐳' : '💩'
+  return game
+}
+const setResult = game => {
+  const result = winner(game.board)
+  if(result) {
+    game.toMove = undefined
+    game.result = result
+  }
+  return game
+}
 const winner = b => {
   // Rows
   if (b[0][0] && b[0][0] === b[0][1] && b[0][1] === b[0][2]) {
