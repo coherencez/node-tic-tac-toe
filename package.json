@@ -1,0 +1,26 @@
+{
+  "name": "node-tic-tac-toe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tkswann2/node-tic-tac-toe.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tkswann2/node-tic-tac-toe/issues"
+  },
+  "homepage": "https://github.com/tkswann2/node-tic-tac-toe#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "mongoose": "^4.6.2",
+    "pug": "^2.0.0-beta6",
+    "socket.io": "^1.4.8"
+  }
+}
