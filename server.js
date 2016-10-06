@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 3000
 const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/tictactoe'
 
 app.set('view engine', 'pug')
-
 app.use(express.static('public'))
 
 app.get('/', (req,res) => res.render('home'))
@@ -46,18 +45,18 @@ const Game = mongoose.model('game', {
 })
 
 io.on('connect', socket => {
-  Game.create({
-    board: [['','',''],['','',''],['','','']],
-    toMove: '💩',
-  })
-  .then(g => {
-    socket.game = g
-    socket.emit('new game', g)
-  })
-  .catch(err => {
-    socket.emit('error', err)
-    console.error(err)
-  })
+  const id = socket.handshake.headers.referer.split('/').slice(-1)[0]
+  console.log(id)
+
+  Game.findById(id)
+    .then(g => {
+      socket.game = g
+      socket.emit('new game', g)
+    })
+    .catch(err => {
+      socket.emit('error', err)
+      console.error(err)
+    })
   console.log(`Socket conneceted: ${socket.id}`)
 
   socket.on('make move', move => makeMove(move, socket))
@@ -65,13 +64,14 @@ io.on('connect', socket => {
 })
 
 const makeMove = (move, socket) => {
-  if(isFinished(socket.game) || isSpaceAvailable(socket.game, move)) {
+  if(isFinished(socket.game) || !isSpaceAvailable(socket.game, move)) {
     return
   }
   // set move
   // toggle move
   // setResult
-  setMove(socket.game, move)
+  Promise.resolve()
+    .then(() => setMove(socket.game, move))
     .then(toggleNextMove)
     .then(setResult)
     .then(g => g.save())
