@@ -50,7 +50,8 @@ io.on('connect', socket => {
 
   Game.findById(id)
     .then(g => {
-      socket.game = g
+      socket.join(g._id)
+      socket.gameId = g._id
       socket.emit('new game', g)
     })
     .catch(err => {
@@ -64,18 +65,18 @@ io.on('connect', socket => {
 })
 
 const makeMove = (move, socket) => {
-  if(isFinished(socket.game) || !isSpaceAvailable(socket.game, move)) {
-    return
-  }
-  // set move
-  // toggle move
-  // setResult
-  Promise.resolve()
-    .then(() => setMove(socket.game, move))
+  Game.findById(socket.gameId)
+    .then(game => {
+      if(isFinished(game) || !isSpaceAvailable(game, move)) {
+        return game
+      }
+    })
+    .then(g => setMove(g, move))
     .then(toggleNextMove)
     .then(setResult)
     .then(g => g.save())
-    .then(g => socket.emit('move made', g))
+    .then(g => io.to(g._id).emit('move made', g))
+    .catch(console.error)
 }
 
 const isFinished = game => !!game.result
