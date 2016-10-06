@@ -15,6 +15,10 @@ const renderStatus = game => {
   if(game.result) {
     return status.innerText = `${game.result} WON!`
   }
+
+  if(game.toMove) {
+    return status.innerText = `${game.toMove}s Turn`
+  }
 }
 
 const renderBoard = game => {

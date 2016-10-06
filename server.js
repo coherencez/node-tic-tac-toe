@@ -68,8 +68,9 @@ const makeMove = (move, socket) => {
   Game.findById(socket.gameId)
     .then(game => {
       if(isFinished(game) || !isSpaceAvailable(game, move)) {
-        return game
+        return
       }
+      return game
     })
     .then(g => setMove(g, move))
     .then(toggleNextMove)
@@ -141,12 +142,10 @@ const winner = b => {
   // In-Progress
     return null
 }
-
 const movesRemaining = board => {
   const POSSIBLE_MOVES = 9
   const movesMade = flatten(board).join('').length
 
   return POSSIBLE_MOVES - movesMade
 }
-
 const flatten = array => array.reduce((a,b) => a.concat(b))
