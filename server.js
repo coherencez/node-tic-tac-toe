@@ -20,10 +20,7 @@ app.get('/game', (req,res) => {
   Game.find().then(games => res.render('index', {games}))
 })
 app.get('/game/create', (req,res) => {
-  Game.create({
-    board: [['','',''],['','',''],['','','']],
-    toMove: '💩',
-  })
+  Game.create({})
   .then(game => res.redirect(`/game/${game._id}`))
   .catch(console.error)
 })
@@ -35,19 +32,24 @@ mongoose.connect(MONGODB_URL, () => {
 })
 
 const Game = mongoose.model('game', {
-  board: [
-    [String,String,String],
-    [String,String,String],
-    [String,String,String],
-  ],
-  toMove: String,
+  board: {
+    type:[
+      [String,String,String],
+      [String,String,String],
+      [String,String,String],
+    ],
+    default: [
+      ['','',''],
+      ['','',''],
+      ['','',''],
+    ],
+},
+  toMove: {type: String, default: '💩'},
   result: String,
 })
 
 io.on('connect', socket => {
   const id = socket.handshake.headers.referer.split('/').slice(-1)[0]
-  console.log(id)
-
   Game.findById(id)
     .then(g => {
       socket.join(g._id)
@@ -68,7 +70,7 @@ const makeMove = (move, socket) => {
   Game.findById(socket.gameId)
     .then(game => {
       if(isFinished(game) || !isSpaceAvailable(game, move)) {
-        return
+        return Promise.reject('Cannot move')
       }
       return game
     })
@@ -79,7 +81,6 @@ const makeMove = (move, socket) => {
     .then(g => io.to(g._id).emit('move made', g))
     .catch(console.error)
 }
-
 const isFinished = game => !!game.result
 const isSpaceAvailable = (game, move) => !game.board[move.row][move.col]
 const setMove = (game, move) => {
