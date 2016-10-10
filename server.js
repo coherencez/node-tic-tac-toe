@@ -46,11 +46,15 @@ const Game = mongoose.model('game', {
 },
   toMove: {type: String, default: '💩'},
   result: String,
+  player1: String,
+  player2: String,
 })
 
 io.on('connect', socket => {
   const id = socket.handshake.headers.referer.split('/').slice(-1)[0]
   Game.findById(id)
+    .then(g => attemptToJoinGameAsPlayer(g, socket))
+    .then(g => g.save())
     .then(g => {
       socket.join(g._id)
       socket.gameId = g._id
@@ -69,7 +73,7 @@ io.on('connect', socket => {
 const makeMove = (move, socket) => {
   Game.findById(socket.gameId)
     .then(game => {
-      if(isFinished(game) || !isSpaceAvailable(game, move)) {
+      if(isFinished(game) || !isSpaceAvailable(game, move) || !isPlayersTurn(game, socket)) {
         return Promise.reject('Cannot move')
       }
       return game
@@ -81,6 +85,22 @@ const makeMove = (move, socket) => {
     .then(g => io.to(g._id).emit('move made', g))
     .catch(console.error)
 }
+const isPlayersTurn = (game, socket) => game.toMove === '💩'
+  ? game.player1 === socket.id
+  : game.player2 === socket.id 
+const attemptToJoinGameAsPlayer = (game, socket) => {
+  if(hasZeroPlayers(game)) {
+    game[`player${randomPlayerNumber()}`] = socket.id
+  } else if (game.player1 && !game.player2) {
+    game.player2 = socket.id
+  } else if (!game.player1 && game.player2) {
+    game.player1 = socket.id
+  }
+  return game
+}
+const randomPlayerNumber = () => Math.round(Math.random()) + 1
+const hasZeroPlayers = game => !game.player1 && !game.player2
+const hasTwoPlayers = game => !!(game.player1 && game.player2)
 const isFinished = game => !!game.result
 const isSpaceAvailable = (game, move) => !game.board[move.row][move.col]
 const setMove = (game, move) => {
