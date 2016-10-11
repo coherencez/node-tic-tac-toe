@@ -89,6 +89,9 @@ const makeMove = (move, socket) => {
 const nextMoveToken = game => game.toMove === game.player1 ? '💩' : '🐳'
 const isPlayersTurn = (game, socket) => game.toMove === socket.id
 const attemptToJoinGameAsPlayer = (game, socket) => {
+  if(hasTwoPlayers(game)) {
+    return game
+  }
   const playerNumber = randomPlayerNumber()
   if(hasZeroPlayers(game)) {
     game[`player${playerNumber}`] = socket.id

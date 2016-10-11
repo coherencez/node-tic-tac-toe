@@ -19,6 +19,8 @@ const renderStatus = game => {
   if(game.toMove === `/#${socket.id}`) {
     return status.innerText = `Make your move`
   }
+
+  status.innerText = `Waiting for other player to move`
 }
 
 const renderBoard = game => {
