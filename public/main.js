@@ -16,8 +16,8 @@ const renderStatus = game => {
     return status.innerText = `${game.result} WON!`
   }
 
-  if(game.toMove) {
-    return status.innerText = `${game.toMove}s Turn`
+  if(game.toMove === `/#${socket.id}`) {
+    return status.innerText = `Make your move`
   }
 }
 

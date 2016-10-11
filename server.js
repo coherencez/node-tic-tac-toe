@@ -44,7 +44,8 @@ const Game = mongoose.model('game', {
       ['','',''],
     ],
 },
-  toMove: {type: String, default: '💩'},
+  toMove: String,
+  // toMove: {type: String, default: '💩'},
   result: String,
   player1: String,
   player2: String,
@@ -85,16 +86,20 @@ const makeMove = (move, socket) => {
     .then(g => io.to(g._id).emit('move made', g))
     .catch(console.error)
 }
-const isPlayersTurn = (game, socket) => game.toMove === '💩'
-  ? game.player1 === socket.id
-  : game.player2 === socket.id 
+const nextMoveToken = game => game.toMove === game.player1 ? '💩' : '🐳'
+const isPlayersTurn = (game, socket) => game.toMove === socket.id
 const attemptToJoinGameAsPlayer = (game, socket) => {
+  const playerNumber = randomPlayerNumber()
   if(hasZeroPlayers(game)) {
-    game[`player${randomPlayerNumber()}`] = socket.id
+    game[`player${playerNumber}`] = socket.id
   } else if (game.player1 && !game.player2) {
     game.player2 = socket.id
   } else if (!game.player1 && game.player2) {
     game.player1 = socket.id
+  }
+
+  if(playerNumber === 1) {
+    game.toMove = socket.id
   }
   return game
 }
@@ -104,12 +109,12 @@ const hasTwoPlayers = game => !!(game.player1 && game.player2)
 const isFinished = game => !!game.result
 const isSpaceAvailable = (game, move) => !game.board[move.row][move.col]
 const setMove = (game, move) => {
-  game.board[move.row][move.col] = game.toMove
+  game.board[move.row][move.col] = nextMoveToken(game)
   game.markModified('board') //trigger mongoose change detection
   return Promise.resolve(game)
 }
 const toggleNextMove = game => {
-  game.toMove = game.toMove === '💩' ? '🐳' : '💩'
+  game.toMove = game.toMove === game.player1 ? game.player2 : game.player1
   return game
 }
 const setResult = game => {
